@@ -35,7 +35,7 @@ export default function Practice() {
       });
       selectedDomains.forEach(d => query.append("domain", d));
 
-      const res = await fetch(`http://localhost:4000/api/test?${query.toString()}`)
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/test?${query.toString()}`)
       const data = await res.json();
 
       setQuestions(data.questions);
