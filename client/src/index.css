@@ -1,0 +1,112 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img {
+  max-height: 50vh;
+  width: auto;
+  padding: 10px;
+}
+
+.stimulus_reference img {
+  min-height: 200px;
+  background-color: transparent;
+}
+
+.math-container img {
+  min-height: 30px;
+  width: auto;
+  padding: 0;
+}
+
+.sr-only {
+  display: none;
+}
+
+.list-group-item label {
+  display: flex;
+  align-items: flex-start; /* aligns radio with top of text */
+  gap: 0.5rem; /* optional spacing */
+}
+
+.list-group-item label input[type="radio"] {
+  margin-top: 0.2rem; /* fine-tune vertical alignment */
+}
+
+.list-group-item label p {
+  display: block; /* allow text to wrap */
+  font-size: small;
+  margin: none;
+}
+
+blockquote {
+  margin: 1em 40px; /* Indent the quote */
+  padding: 10px 20px; /* Add internal spacing */
+  border-left: 5px solid #ccc; /* Add a decorative left border */
+  font-style: italic; /* Italicize the text */
+  color: #333; /* Set text color */
+  background-color: #f9f9f9; /* Light background color */
+}
+
+/* App wide navbar */
+.app-navbar {
+  background: linear-gradient(90deg,#0d6efd, #6610f2);
+  color: white;
+  padding: 0.5rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.app-navbar .nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.app-navbar .brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.app-navbar .nav-actions .btn-link {
+  color: rgba(255,255,255,0.9);
+  text-decoration: none;
+}
+
+/* Hero */
+.hero {
+  background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+  padding: 4rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+.hero-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  text-align: left;
+  padding: 0 1rem;
+}
+.hero h1 {
+  font-size: 2.4rem;
+  margin-bottom: 0.5rem;
+}
+.hero .lead {
+  color: #495057;
+  margin-bottom: 1.25rem;
+}
+.hero-cta .btn-lg {
+  padding: 0.75rem 1.25rem;
+}
+
+/* Small utilities */
+.container { padding: 0 1rem; }
+
+colgroup {
+  width: 100%;
+}
