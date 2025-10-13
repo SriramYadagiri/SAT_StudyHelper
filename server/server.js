@@ -6,45 +6,62 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://sat-prep-uaya.onrender.com"
+];
+
 app.use(cors({
-  origin: "https://sat-prep-uaya.onrender.com",
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST"],
   credentials: true
 }));
 app.use(express.json());
 
 // --- Helper: Load question JSON ---
-function loadQuestions(filename) {
-  const filePath = path.join(__dirname, filename);
-  if (fs.existsSync(filePath)) {
-    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-  }
-  return [];
-}
+function loadAllQuestions(subject) {
+  const dirPath = path.join(__dirname, "split", subject.toLowerCase());
+  if (!fs.existsSync(dirPath)) return [];
 
-// --- Helper: Get random subset ---
-function getRandomSubset(array, count) {
-  const shuffled = [...array].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count);
+  const files = fs.readdirSync(dirPath).filter(f => f.endsWith(".json"));
+  let allData = [];
+
+  for (const file of files) {
+    const filePath = path.join(dirPath, file);
+    try {
+      const content = JSON.parse(fs.readFileSync(filePath, "utf8"));
+      allData = allData.concat(content);
+    } catch (err) {
+      console.error(`Error reading ${filePath}:`, err);
+    }
+  }
+
+  return allData;
 }
 
 // --- API routes ---
 
 app.get('/api/math', (req, res) => {
-  res.json(loadQuestions('math-questions.json'));
+  res.json(loadAllQuestions("math"));
 });
 
 app.get('/api/reading', (req, res) => {
-  res.json(loadQuestions('reading-questions.json'));
+  res.json(loadAllQuestions("reading"));
 });
 
 app.get('/api/math-random', (req, res) => {
-  const data = loadQuestions('math-questions.json');
+  const data = loadAllQuestions("math");
   res.json(data[Math.floor(Math.random() * data.length)]);
 });
 
 app.get('/api/reading-random', (req, res) => {
-  const data = loadQuestions('reading-questions.json');
+  const data = loadAllQuestions("reading");
   res.json(data[Math.floor(Math.random() * data.length)]);
 });
 
@@ -89,54 +106,50 @@ function pickRandom(arr, n) {
   return shuffled.slice(0, n);
 }
 
-app.get('/api/test', (req, res) => {
-  const { subject = 'math', domain, count = 10, difficulty = 2} = req.query;
+app.get("/api/test", (req, res) => {
+  const { subject = "math", domain, count = 10, difficulty = 2 } = req.query;
 
-  // Map subject to file
-  const fileMap = {
-    math: 'math-questions.json',
-    reading: 'reading-questions.json'
-  };
-  const filename = fileMap[subject.toLowerCase()];
-  if (!filename) {
-    return res.status(400).json({ error: 'Invalid subject. Use math or reading.' });
+  if (!(subject.toLowerCase() === "math" || subject.toLowerCase() === "reading")) {
+    return res.status(400).json({ error: "Invalid subject. Use math or reading." });
   }
 
-  let data = loadQuestions(filename);
+  let data = loadAllQuestions(subject);
+  if (!data.length) {
+    return res.status(500).json({ error: "No question data found on server." });
+  }
 
-  // Support multiple domains
-  // domain can be: ?domain=Algebra,Advanced%20Math or ?domain[]=Algebra&domain[]=Advanced%20Math
+  // Handle domain filtering
   let domainList = [];
   if (Array.isArray(domain)) {
-    domainList = domain.map((d) => d.toLowerCase());
+    domainList = domain.map(d => d.toLowerCase());
   } else if (typeof domain === "string") {
-    domainList = domain.split(",").map((d) => d.trim().toLowerCase());
+    domainList = domain.split(",").map(d => d.trim().toLowerCase());
   }
 
   if (domainList.length > 0) {
     data = data.filter(
-      (q) => q.domain && domainList.some((d) => q.domain.toLowerCase().includes(d))
+      q => q.domain && domainList.some(d => q.domain.toLowerCase().includes(d))
     );
   }
 
   if (data.length === 0) {
-    return res.status(404).json({ error: 'No questions found for the selected domains.' });
+    return res.status(404).json({ error: "No questions found for the selected domains." });
   }
 
-  // Random subset
+  // Randomize order
   const shuffled = [...data].sort(() => 0.5 - Math.random());
 
-  // Difficulty-based selection
+  // Weighted difficulty selection
   const weights = getDifficultyWeights(parseFloat(difficulty));
-  const easyQs = shuffled.filter(q => q.difficulty === 'Easy');
-  const medQs = shuffled.filter(q => q.difficulty === 'Medium');
-  const hardQs = shuffled.filter(q => q.difficulty === 'Hard');
+  const easyQs = shuffled.filter(q => q.difficulty === "Easy");
+  const medQs = shuffled.filter(q => q.difficulty === "Medium");
+  const hardQs = shuffled.filter(q => q.difficulty === "Hard");
 
   const selected = pickWeightedQuestions(easyQs, medQs, hardQs, count, weights);
 
   res.json({
     subject,
-    domains: domainList.length ? domainList : ['All Domains'],
+    domains: domainList.length ? domainList : ["All Domains"],
     total: selected.length,
     questions: selected,
   });
