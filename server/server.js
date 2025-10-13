@@ -106,50 +106,66 @@ function pickRandom(arr, n) {
   return shuffled.slice(0, n);
 }
 
-app.get("/api/test", (req, res) => {
-  const { subject = "math", domain, count = 10, difficulty = 2 } = req.query;
+app.get('/api/test', (req, res) => {
+  const { subject = 'math', domain, count = 10, difficulty = 2 } = req.query;
 
-  if (!(subject.toLowerCase() === "math" || subject.toLowerCase() === "reading")) {
-    return res.status(400).json({ error: "Invalid subject. Use math or reading." });
+  if (!['math', 'reading'].includes(subject.toLowerCase())) {
+    return res.status(400).json({ error: 'Invalid subject. Use math or reading.' });
   }
 
-  let data = loadAllQuestions(subject);
-  if (!data.length) {
-    return res.status(500).json({ error: "No question data found on server." });
-  }
-
-  // Handle domain filtering
+  const subjectDir = path.join(__dirname, 'data', subject.toLowerCase());
   let domainList = [];
+
   if (Array.isArray(domain)) {
-    domainList = domain.map(d => d.toLowerCase());
-  } else if (typeof domain === "string") {
-    domainList = domain.split(",").map(d => d.trim().toLowerCase());
+    domainList = domain.map((d) => d.toLowerCase());
+  } else if (typeof domain === 'string') {
+    domainList = domain.split(',').map((d) => d.trim().toLowerCase());
   }
 
-  if (domainList.length > 0) {
-    data = data.filter(
-      q => q.domain && domainList.some(d => q.domain.toLowerCase().includes(d))
-    );
+  let allData = [];
+
+  try {
+    if (domainList.length > 0) {
+      // Load only selected domain files
+      domainList.forEach((d) => {
+        const fileName = d.replace(/\s+/g, '_') + '.json';
+        const filePath = path.join(subjectDir, fileName);
+        if (fs.existsSync(filePath)) {
+          const json = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+          allData = allData.concat(json);
+        }
+      });
+    } else {
+      // Load all files in the subject folder
+      const files = fs.readdirSync(subjectDir);
+      files.forEach((file) => {
+        const json = JSON.parse(fs.readFileSync(path.join(subjectDir, file), 'utf8'));
+        allData = allData.concat(json);
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Error reading question files.' });
   }
 
-  if (data.length === 0) {
-    return res.status(404).json({ error: "No questions found for the selected domains." });
+  if (!allData.length) {
+    return res.status(404).json({ error: 'No questions found for the selected domains.' });
   }
 
-  // Randomize order
-  const shuffled = [...data].sort(() => 0.5 - Math.random());
+  // Shuffle
+  const shuffled = [...allData].sort(() => 0.5 - Math.random());
 
   // Weighted difficulty selection
   const weights = getDifficultyWeights(parseFloat(difficulty));
-  const easyQs = shuffled.filter(q => q.difficulty === "Easy");
-  const medQs = shuffled.filter(q => q.difficulty === "Medium");
-  const hardQs = shuffled.filter(q => q.difficulty === "Hard");
+  const easyQs = shuffled.filter((q) => q.difficulty === 'Easy');
+  const medQs = shuffled.filter((q) => q.difficulty === 'Medium');
+  const hardQs = shuffled.filter((q) => q.difficulty === 'Hard');
 
   const selected = pickWeightedQuestions(easyQs, medQs, hardQs, count, weights);
 
   res.json({
     subject,
-    domains: domainList.length ? domainList : ["All Domains"],
+    domains: domainList.length ? domainList : ['All Domains'],
     total: selected.length,
     questions: selected,
   });
