@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Container } from "react-bootstrap";
 
 const testDomains = {
-  Math: [
+  "Math": [
     "Algebra",
     "Advanced Math",
     "Problem-Solving and Data Analysis",
