@@ -110,7 +110,7 @@ app.get('/api/test', (req, res) => {
   const { subject = 'math', domain, count = 10, difficulty = 2 } = req.query;
 
   if (!['math', 'reading'].includes(subject.toLowerCase())) {
-    return res.status(400).json({ error: 'Invalid subject. Use math or reading.' });
+    return res.status(400).json({ error: `Invalid subject (${subject}). Use math or reading.` });
   }
 
   const subjectDir = path.join(__dirname, 'data', subject.toLowerCase());
