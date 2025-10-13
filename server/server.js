@@ -6,7 +6,11 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors());
+app.use(cors({
+  origin: "https://sat-prep-uaya.onrender.com",
+  methods: ["GET", "POST"],
+  credentials: true
+}));
 app.use(express.json());
 
 // --- Helper: Load question JSON ---
