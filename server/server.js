@@ -125,24 +125,14 @@ app.get('/api/test', (req, res) => {
   let allData = [];
 
   try {
-    if (domainList.length > 0) {
-      // Load only selected domain files
-      domainList.forEach((d) => {
-        const fileName = d.replace(/\s+/g, '_') + '.json';
-        const filePath = path.join(subjectDir, fileName);
-        if (fs.existsSync(filePath)) {
-          const json = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-          allData = allData.concat(json);
-        }
-      });
-    } else {
-      // Load all files in the subject folder
-      const files = fs.readdirSync(subjectDir);
-      files.forEach((file) => {
-        const json = JSON.parse(fs.readFileSync(path.join(subjectDir, file), 'utf8'));
+    domainList.forEach((d) => {
+      const fileName = d.replace(/\s+/g, '_') + '.json';
+      const filePath = path.join(subjectDir, fileName);
+      if (fs.existsSync(filePath)) {
+        const json = JSON.parse(fs.readFileSync(filePath, 'utf8'));
         allData = allData.concat(json);
-      });
-    }
+      }
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Error reading question files.' });
