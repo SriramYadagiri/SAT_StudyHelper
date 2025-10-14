@@ -29,7 +29,7 @@ export default function Practice() {
     setLoading(true);
     try {
       const query = new URLSearchParams({
-        subject: testType.toLowerCase() == "math" ? "math" : "reading",
+        subject: testType.toLowerCase() === "math" ? "math" : "reading",
         count: numQuestions.toString(),
         difficulty: (state?.difficulty || 2).toString(), // default medium
       });
