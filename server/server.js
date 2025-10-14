@@ -117,24 +117,30 @@ app.get('/api/test', (req, res) => {
   let domainList = [];
 
   if (Array.isArray(domain)) {
-    domainList = domain.map((d) => d.toLowerCase());
+    domainList = domain.map(d => d.toLowerCase());
   } else if (typeof domain === 'string') {
-    domainList = domain.split(',').map((d) => d.trim().toLowerCase());
+    domainList = domain.split(',').map(d => d.trim().toLowerCase());
   }
+
+  // If no domains specified, use all .json files
+  const filesToRead = domainList.length
+    ? domainList.map(d => path.join(subjectDir, d.replace(/\s+/g, '_') + '.json'))
+    : fs.readdirSync(subjectDir).map(f => path.join(subjectDir, f));
 
   let allData = [];
 
   try {
-    domainList.forEach((d) => {
-      const fileName = d.replace(/\s+/g, '_') + '.json';
-      const filePath = path.join(subjectDir, fileName);
-      if (fs.existsSync(filePath)) {
-        const json = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        allData = allData.concat(json);
-      }
-    });
+    for (const filePath of filesToRead) {
+      if (!fs.existsSync(filePath)) continue;
+
+      // Instead of reading the entire file, parse and take a small random subset
+      const json = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      const sampleSize = Math.min(200, json.length); // only take up to 200 random questions per domain
+      const sample = json.sort(() => 0.5 - Math.random()).slice(0, sampleSize);
+      allData = allData.concat(sample);
+    }
   } catch (err) {
-    console.error(err);
+    console.error("Error reading JSON files:", err);
     return res.status(500).json({ error: 'Error reading question files.' });
   }
 
@@ -142,14 +148,12 @@ app.get('/api/test', (req, res) => {
     return res.status(404).json({ error: 'No questions found for the selected domains.' });
   }
 
-  // Shuffle
+  // Shuffle and pick by difficulty weights
   const shuffled = [...allData].sort(() => 0.5 - Math.random());
-
-  // Weighted difficulty selection
   const weights = getDifficultyWeights(parseFloat(difficulty));
-  const easyQs = shuffled.filter((q) => q.difficulty === 'Easy');
-  const medQs = shuffled.filter((q) => q.difficulty === 'Medium');
-  const hardQs = shuffled.filter((q) => q.difficulty === 'Hard');
+  const easyQs = shuffled.filter(q => q.difficulty === 'Easy');
+  const medQs  = shuffled.filter(q => q.difficulty === 'Medium');
+  const hardQs = shuffled.filter(q => q.difficulty === 'Hard');
 
   const selected = pickWeightedQuestions(easyQs, medQs, hardQs, count, weights);
 
