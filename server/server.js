@@ -113,7 +113,7 @@ app.get('/api/test', (req, res) => {
     return res.status(400).json({ error: `Invalid subject (${subject}). Use math or reading.` });
   }
 
-  const subjectDir = path.join(__dirname, 'data', subject.toLowerCase());
+  const subjectDir = path.join(__dirname, 'split', subject.toLowerCase());
   let domainList = [];
 
   if (Array.isArray(domain)) {
