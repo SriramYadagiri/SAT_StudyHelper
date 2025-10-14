@@ -141,7 +141,7 @@ app.get('/api/test', (req, res) => {
     }
   } catch (err) {
     console.error("Error reading JSON files:", err);
-    return res.status(500).json({ error: 'Error reading question files.' });
+    return res.status(500).json({ error: "Error reading question files." });
   }
 
   if (!allData.length) {
