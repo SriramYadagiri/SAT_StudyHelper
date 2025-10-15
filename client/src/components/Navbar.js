@@ -9,11 +9,11 @@ export default function Navbar() {
         <BsNavbar.Brand as={Link} to="/" className="d-flex align-items-center">
           <img
             src={logo}
-            alt="SAT StudyHelper Logo"
+            alt="SAT Wizard Logo"
             height="60"
             className="me-2"
           />
-          <span className="fw-semibold">SAT StudyHelper</span>
+          <span className="fw-semibold">SAT Wizard</span>
         </BsNavbar.Brand>
         <BsNavbar.Toggle aria-controls="basic-navbar-nav" />
         <BsNavbar.Collapse id="basic-navbar-nav">

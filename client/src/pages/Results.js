@@ -190,6 +190,24 @@ export default function Results() {
                     __html: decodeEntities(q.question || ""),
                   }}
                 />
+                {q.choices && q.choices.length > 0 && 
+                  (
+                    <ul style={{ backgroundColor: "transparent" }} className="list-group mt-2">
+                      {q.choices.map((c, i) => (
+                        <li style={{ backgroundColor: "transparent" }} className="list-group-item" key={i}>
+                          <label className="d-flex align-items-start gap-2">
+                            <input
+                              type="radio"
+                              className="mt-1"
+                              disabled
+                            />
+                            <div dangerouslySetInnerHTML={{ __html: decodeEntities(c) }} />
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                  )
+                }
                 <p>
                   <strong>Your answer:</strong>{" "}
                   {answers[i] === undefined
