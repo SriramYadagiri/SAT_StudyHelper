@@ -28,24 +28,78 @@ export default function Practice() {
   const fetchQuestions = useCallback(async () => {
     setLoading(true);
     try {
-      const query = new URLSearchParams({
-        subject: testType.toLowerCase() === "math" ? "math" : "reading",
-        count: numQuestions.toString(),
-        difficulty: (state?.difficulty || 2).toString(), // default medium
+      const subject = testType.toLowerCase() === "math" ? "math" : "reading";
+      const count = numQuestions || 10;
+      const difficulty = state?.difficulty || 2;
+
+      // --- difficulty weight calculation ---
+      function getDifficultyWeights(d) {
+        d = Math.min(Math.max(d, 1), 3);
+        const easy = Math.max(0, 0.8 - 0.6 * (d - 1));
+        const med = Math.max(0, 0.2 + 0.4 * Math.abs(2 - d));
+        const hard = Math.max(0, 0.7 * (d - 1) / 2);
+        const total = easy + med + hard;
+        return {
+          easy: easy / total,
+          med: med / total,
+          hard: hard / total,
+        };
+      }
+
+      function pickRandom(arr, n) {
+        const shuffled = [...arr].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, n);
+      }
+
+      function pickWeightedQuestions(easyQs, medQs, hardQs, totalCount, weights) {
+        const easyCount = Math.floor(totalCount * weights.easy);
+        const medCount = Math.floor(totalCount * weights.med);
+        const hardCount = totalCount - easyCount - medCount;
+
+        const selected = [
+          ...pickRandom(easyQs, easyCount),
+          ...pickRandom(medQs, medCount),
+          ...pickRandom(hardQs, hardCount),
+        ];
+        return selected;
+      }
+
+      const weights = getDifficultyWeights(difficulty);
+
+      // --- Load selected domain JSON files ---
+      const domainsToLoad =
+        selectedDomains.length > 0
+          ? selectedDomains.map((d) => d.toLowerCase().replace(/\s+/g, "_"))
+          : null;
+
+      const domainPromises = (domainsToLoad
+        ? domainsToLoad
+        : []
+      ).map(async (domain) => {
+        const filePath = `/split/${subject}/${domain}.json`;
+        const res = await fetch(filePath);
+        if (!res.ok) throw new Error(`Failed to load ${filePath}`);
+        const json = await res.json();
+        return Array.isArray(json) ? json : json.questions;
       });
-      selectedDomains.forEach(d => query.append("domain", d));
 
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/test?${query.toString()}`)
-      const data = await res.json();
+      const domainData = await Promise.all(domainPromises);
+      let allData = domainData.flat();
 
-      setQuestions(data.questions);
+      // --- categorize by difficulty (like server) ---
+      const easyQs = allData.filter((q) => q.difficulty === "Easy");
+      const medQs = allData.filter((q) => q.difficulty === "Medium");
+      const hardQs = allData.filter((q) => q.difficulty === "Hard");
+
+      const selected = pickWeightedQuestions(easyQs, medQs, hardQs, count, weights);
+      setQuestions(selected);
     } catch (err) {
       console.error("Error loading questions:", err);
       setQuestions([]);
     } finally {
       setLoading(false);
     }
-  }, [testType, domainList, numQuestions]);
+  }, [testType, selectedDomains, numQuestions, state?.difficulty]);
 
   useEffect(() => {
     fetchQuestions();
